@@ -142,9 +142,54 @@ function parseMultipart(event) {
   });
 }
 
+let cachedAdminToken = null;
+let cachedAdminTokenExpiresAt = 0;
+
+async function getAdminAccessToken() {
+  // New Shopify Dev Dashboard flow:
+  // SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET are stored in Netlify only.
+  // The Admin token is requested server-side and refreshed automatically.
+  if (process.env.SHOPIFY_CLIENT_ID && process.env.SHOPIFY_CLIENT_SECRET) {
+    const now = Date.now();
+
+    if (cachedAdminToken && now < cachedAdminTokenExpiresAt - 5 * 60 * 1000) {
+      return cachedAdminToken;
+    }
+
+    const storeDomain = requireEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "");
+
+    const body = new URLSearchParams();
+    body.set("grant_type", "client_credentials");
+    body.set("client_id", requireEnv("SHOPIFY_CLIENT_ID"));
+    body.set("client_secret", requireEnv("SHOPIFY_CLIENT_SECRET"));
+
+    const response = await fetch(`https://${storeDomain}/admin/oauth/access_token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.access_token) {
+      console.error("Shopify token request failed:", JSON.stringify(data, null, 2));
+      throw new Error("Shopify Admin access could not be created.");
+    }
+
+    cachedAdminToken = data.access_token;
+    cachedAdminTokenExpiresAt = Date.now() + Number(data.expires_in || 86399) * 1000;
+    return cachedAdminToken;
+  }
+
+  // Fallback for older Shopify admin-created custom apps.
+  return requireEnv("SHOPIFY_ADMIN_ACCESS_TOKEN");
+}
+
 async function shopifyAdmin(query, variables) {
   const storeDomain = requireEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "");
-  const token = requireEnv("SHOPIFY_ADMIN_ACCESS_TOKEN");
+  const token = await getAdminAccessToken();
 
   const response = await fetch(`https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
     method: "POST",

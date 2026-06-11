@@ -11,7 +11,12 @@ Important security rules
 Netlify environment variables required
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
 SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_storefront_token
-SHOPIFY_ADMIN_ACCESS_TOKEN=your_admin_token
+# New Shopify Dev Dashboard app flow. Use these two instead of SHOPIFY_ADMIN_ACCESS_TOKEN:
+SHOPIFY_CLIENT_ID=your_dev_dashboard_client_id
+SHOPIFY_CLIENT_SECRET=your_dev_dashboard_client_secret
+
+# Legacy fallback only if Shopify gives you an old shpat token:
+# SHOPIFY_ADMIN_ACCESS_TOKEN=your_admin_token
 
 ALLOWED_ORIGINS=https://your-netlify-site.netlify.app,https://your-custom-domain.com
 
@@ -35,7 +40,7 @@ CHECKOUT_RATE_LIMIT_PER_MINUTE=20
 MAX_CHECKOUT_BODY_CHARS=50000
 
 What is protected
-- Admin API token is only used inside Netlify Functions.
+- Shopify Client Secret and generated Admin tokens are only used inside Netlify Functions.
 - Storefront API token is also kept server-side.
 - Requests are blocked if they do not come from ALLOWED_ORIGINS.
 - Uploads are limited to PNG, JPG, WEBP, or SVG.

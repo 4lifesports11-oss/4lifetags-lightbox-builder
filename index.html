@@ -1832,7 +1832,7 @@ function applyCurrentToUI() {
   const uploadStatus = byId("uploadStatus");
   if (uploadStatus) {
     uploadStatus.className = "upload-status" + (state.uploadFileUrl || state.uploadFileId ? " success" : "");
-    uploadStatus.textContent = state.uploadFileUrl || state.uploadFileId ? "Logo uploaded to Shopify and will appear on the order." : "";
+    uploadStatus.textContent = state.uploadFileUrl || state.uploadFileId ? "Logo uploaded. A direct image link will appear on the Shopify order." : "";
   }
   byId("requestInput").value = state.request;
   byId("noteInput").value = state.note;
@@ -2146,7 +2146,7 @@ async function uploadLogoToShopify(file) {
 
   if (status) {
     status.className = "upload-status success";
-    status.textContent = "Logo uploaded to Shopify and will appear on the order.";
+    status.textContent = "Logo uploaded. A direct image link will appear on the Shopify order.";
   }
 
   return data;

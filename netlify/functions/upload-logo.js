@@ -313,6 +313,41 @@ async function createShopifyFile(target, file) {
   return payload.files[0];
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function getShopifyFilePublicUrl(fileId) {
+  const query = `
+    query getFile($id: ID!) {
+      node(id: $id) {
+        ... on MediaImage {
+          id
+          fileStatus
+          image {
+            url
+          }
+        }
+      }
+    }
+  `;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const data = await shopifyAdmin(query, { id: fileId });
+    const node = data.data && data.data.node ? data.data.node : null;
+    const url = node && node.image && node.image.url ? node.image.url : "";
+
+    if (url) {
+      return url;
+    }
+
+    await sleep(1000);
+  }
+
+  return "";
+}
+
+
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") {
@@ -336,12 +371,14 @@ exports.handler = async (event) => {
     const target = await createStagedTarget(file);
     await uploadToStagedTarget(target, file);
     const createdFile = await createShopifyFile(target, file);
+    const publicUrl = await getShopifyFilePublicUrl(createdFile.id);
 
     return json(200, {
       fileId: createdFile.id,
       status: createdFile.fileStatus,
-      url: createdFile.image && createdFile.image.url ? createdFile.image.url : target.resourceUrl,
-      filename: file.filename
+      url: publicUrl || "",
+      filename: file.filename,
+      message: publicUrl ? "Logo uploaded and public image URL is ready." : "Logo uploaded, but Shopify is still processing the preview URL."
     });
   } catch (error) {
     console.error(error);

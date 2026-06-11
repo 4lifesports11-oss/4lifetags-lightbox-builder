@@ -1,2198 +1,314 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4LifeTags Custom Lightbox Builder</title>
-
-<style>
-:root {
-  --bg: #02050b;
-  --panel: rgba(5, 10, 18, .84);
-  --panel2: rgba(8, 14, 24, .92);
-  --card: rgba(8, 15, 26, .92);
-  --line: rgba(255,255,255,.14);
-  --line2: rgba(255,255,255,.32);
-  --text: #ffffff;
-  --muted: #9dafc2;
-  --soft: #d7e8f8;
-  --blue: #149dff;
-  --cyan: #4be7ff;
-  --blue2: #006dff;
-  --green: #68ffae;
-  --red: #ff5c7d;
-  --shadow: 0 30px 100px rgba(0,0,0,.58);
-}
-
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  min-height: 100%;
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #02050b;
-  overflow-x: hidden;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-image: url("assets/background.png");
-  background-size: cover;
-  background-position: center center;
-  filter: brightness(.58) saturate(1.08);
-  transform: scale(1.02);
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 32%, rgba(20,157,255,.08), transparent 34%),
-    linear-gradient(to bottom, rgba(0,0,0,.2), rgba(2,5,11,.62) 42%, rgba(2,5,11,.92));
-}
-
-button, input, textarea { font: inherit; }
-
-.page {
-  min-height: 100vh;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-}
-
-.topbar {
-  width: min(1120px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 16px 0 6px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-}
-
-.logo {
-  grid-column: 2;
-  height: 92px;
-  width: auto;
-  display: block;
-  filter: drop-shadow(0 0 22px rgba(20,157,255,.32));
-}
-
-.step-pill {
-  justify-self: end;
-  border: 1px solid var(--line);
-  background: rgba(3, 6, 12, .68);
-  backdrop-filter: blur(18px);
-  color: #dbeaf8;
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.builder {
-  width: min(1120px, calc(100% - 32px));
-  margin: 0 auto;
-  flex: 1;
-  display: grid;
-  place-items: center;
-  padding: 16px 0 120px;
-}
-
-.step {
-  width: 100%;
-  display: none;
-  animation: enter .22s ease both;
-}
-
-.step.active { display: block; }
-
-@keyframes enter {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
-}
-
-.question {
-  text-align: center;
-  margin-bottom: 26px;
-}
-
-.kicker {
-  margin-bottom: 10px;
-  color: var(--blue);
-  text-transform: uppercase;
-  letter-spacing: .18em;
-  font-size: 12px;
-  font-weight: 1000;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(34px, 5vw, 66px);
-  line-height: .90;
-  letter-spacing: -.065em;
-  text-transform: uppercase;
-  text-shadow: 0 16px 34px rgba(0,0,0,.55);
-}
-
-.help {
-  margin: 13px auto 0;
-  color: var(--muted);
-  line-height: 1.55;
-  max-width: 660px;
-  font-size: 16px;
-}
-
-.selection-grid {
-  width: min(850px, 100%);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-}
-
-.selection-card {
-  border: 1px solid rgba(255,255,255,.34);
-  border-radius: 10px;
-  background: var(--card);
-  padding: 0;
-  color: var(--text);
-  cursor: pointer;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  position: relative;
-  transition: .18s ease;
-  text-align: left;
-}
-
-.selection-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(75,231,255,.9);
-  box-shadow: 0 0 0 4px rgba(20,157,255,.10), var(--shadow);
-}
-
-.selection-card.selected {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 4px rgba(20,157,255,.13), 0 0 56px rgba(20,157,255,.25), var(--shadow);
-}
-
-.selection-image {
-  height: 350px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.selection-image::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(2,5,11,.96), rgba(2,5,11,.18) 58%, rgba(2,5,11,.05));
-}
-
-.selection-content {
-  position: relative;
-  padding: 20px 20px 22px;
-  background: linear-gradient(to bottom, rgba(7,13,22,.94), rgba(4,8,14,.98));
-}
-
-.selection-title {
-  font-size: clamp(27px, 3vw, 36px);
-  line-height: .92;
-  font-weight: 1000;
-  letter-spacing: -.05em;
-  text-transform: uppercase;
-  margin: 0 0 7px;
-}
-
-.selection-sub {
-  margin: 0;
-  color: var(--cyan);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  font-size: 12px;
-  font-weight: 950;
-}
-
-.input-panel {
-  width: min(800px, 100%);
-  margin: 18px auto 0;
-  display: none;
-  padding: 18px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 20px;
-  backdrop-filter: blur(18px);
-  box-shadow: var(--shadow);
-}
-
-.input-panel.active { display: block; }
-
-.label {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  font-weight: 950;
-}
-
-.text-input, .textarea {
-  width: 100%;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 16px;
-  background: rgba(255,255,255,.055);
-  color: var(--text);
-  outline: none;
-  padding: 18px;
-  font-size: 17px;
-}
-
-.text-input::placeholder, .textarea::placeholder { color: #73869a; }
-
-.textarea {
-  min-height: 230px;
-  resize: vertical;
-  line-height: 1.55;
-}
-
-.upload-row {
-  border: 1px dashed rgba(75,231,255,.5);
-  background: rgba(20,157,255,.07);
-  border-radius: 16px;
-  padding: 18px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.upload-row input { display: none; }
-
-.upload-btn {
-  border: none;
-  background: linear-gradient(135deg, var(--cyan), var(--blue2));
-  color: #00111c;
-  border-radius: 999px;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-weight: 1000;
-  white-space: nowrap;
-}
-
-.size-list {
-  width: min(720px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 12px;
-}
-
-.size-option {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-  padding: 18px 20px;
-  box-shadow: 0 18px 54px rgba(0,0,0,.34);
-  transition: .16s ease;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  text-align: left;
-}
-
-.size-option:hover, .size-option.selected {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(20,157,255,.10), 0 20px 64px rgba(0,0,0,.42);
-}
-
-.size-radio {
-  width: 22px;
-  height: 22px;
-  border: 2px solid rgba(255,255,255,.32);
-  border-radius: 999px;
-}
-
-.size-option.selected .size-radio {
-  border-color: var(--cyan);
-  box-shadow:
-    inset 0 0 0 4px #07111c,
-    inset 0 0 0 12px var(--cyan),
-    0 0 18px rgba(75,231,255,.42);
-}
-
-.size-info strong {
-  display: block;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: -.035em;
-}
-
-.size-info span {
-  display: block;
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.size-price {
-  color: var(--cyan);
-  font-size: 31px;
-  line-height: 1;
-  font-weight: 1000;
-  letter-spacing: -.045em;
-}
-
-.addon-list {
-  width: min(840px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 12px;
-}
-
-.addon {
-  display: grid;
-  grid-template-columns: 26px 1fr auto;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  padding: 16px 18px;
-  cursor: pointer;
-  box-shadow: 0 16px 52px rgba(0,0,0,.32);
-  transition: .16s ease;
-}
-
-.addon:hover, .addon.selected {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(20,157,255,.09), 0 18px 58px rgba(0,0,0,.38);
-}
-
-.check {
-  width: 22px;
-  height: 22px;
-  border: 1px solid rgba(255,255,255,.30);
-  border-radius: 999px;
-}
-
-.addon.selected .check {
-  background: var(--cyan);
-  border-color: var(--cyan);
-  box-shadow: 0 0 18px rgba(75,231,255,.44);
-}
-
-.addon-title {
-  display: block;
-  text-transform: uppercase;
-  font-weight: 1000;
-  letter-spacing: .02em;
-  margin-bottom: 3px;
-}
-
-.addon-desc {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.addon-price {
-  color: var(--cyan);
-  font-size: 20px;
-  font-weight: 1000;
-}
-
-.review-wrap {
-  width: min(980px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 16px;
-}
-
-.checkout-box {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 18px;
-  align-items: center;
-  border: 1px solid rgba(75,231,255,.30);
-  background: linear-gradient(135deg, rgba(20,157,255,.16), rgba(0,109,255,.08));
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: 0 22px 70px rgba(0,0,0,.38);
-}
-
-.total-label {
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: .10em;
-  text-transform: uppercase;
-  font-weight: 950;
-}
-
-.total {
-  font-size: 48px;
-  font-weight: 1000;
-  letter-spacing: -.06em;
-}
-
-.checkout-actions {
-  min-width: 430px;
-  display: grid;
-  gap: 10px;
-}
-
-.checkout-main {
-  border: none;
-  background: linear-gradient(135deg, var(--cyan), var(--blue2));
-  color: #00111c;
-  border-radius: 14px;
-  padding: 16px 18px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-}
-
-.payment-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-.payment {
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,.045);
-  border-radius: 12px;
-  padding: 12px 8px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.included {
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: var(--shadow);
-}
-
-.included h2 {
-  margin: 0 0 12px;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-}
-
-.included-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-}
-
-.included-item {
-  min-height: 74px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 12px 8px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.045);
-  border-radius: 14px;
-  color: #dbe9f7;
-  font-size: 12px;
-  line-height: 1.32;
-}
-
-.review-card {
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-
-.review-row {
-  display: grid;
-  grid-template-columns: 155px 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 15px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-
-.review-row:last-child { border-bottom: none; }
-
-.review-label {
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  font-size: 12px;
-  font-weight: 950;
-}
-
-.review-value {
-  font-weight: 850;
-  word-break: break-word;
-}
-
-.edit-btn {
-  border: 1px solid rgba(75,231,255,.32);
-  background: rgba(75,231,255,.08);
-  color: #d7fbff;
-  border-radius: 999px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-weight: 900;
-}
-
-.new-lightbox-box {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  border: 1px solid rgba(255,255,255,.13);
-  background: rgba(255,255,255,.045);
-  border-radius: 18px;
-  padding: 16px;
-}
-
-.new-lightbox-box strong {
-  display: block;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  margin-bottom: 4px;
-}
-
-.new-lightbox-box span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.add-another {
-  border: 1px solid rgba(75,231,255,.3);
-  background: linear-gradient(135deg, rgba(75,231,255,.18), rgba(20,157,255,.1));
-  color: #d7fbff;
-  border-radius: 14px;
-  padding: 14px 16px;
-  cursor: pointer;
-  font-weight: 950;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.saved-section {
-  display: none;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 20px;
-  padding: 16px;
-}
-
-.saved-section.active { display: block; }
-
-.saved-section h2 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-}
-
-.saved-list {
-  display: grid;
-  gap: 10px;
-}
-
-.saved-item {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--line);
-  background: rgba(255,255,255,.045);
-  border-radius: 14px;
-  padding: 13px 14px;
-  color: var(--muted);
-}
-
-.saved-item strong { color: var(--text); }
-
-.saved-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.saved-edit, .saved-remove {
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.saved-edit {
-  border: 1px solid rgba(75,231,255,.32);
-  background: rgba(75,231,255,.08);
-  color: #d7fbff;
-}
-
-.saved-remove {
-  border: 1px solid rgba(255,92,125,.32);
-  background: rgba(255,92,125,.08);
-  color: #ffd2dc;
-}
-
-.editing-banner {
-  display: none;
-  width: min(820px, 100%);
-  margin: 0 auto 14px;
-  border: 1px solid rgba(75,231,255,.34);
-  background: rgba(75,231,255,.08);
-  color: #d7fbff;
-  border-radius: 16px;
-  padding: 12px 14px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.editing-banner.active { display: block; }
-
-.bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  width: min(680px, calc(100% - 28px));
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 14px;
-  padding: 10px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(3,6,12,.84);
-  backdrop-filter: blur(20px);
-  border-radius: 999px;
-  box-shadow: 0 20px 74px rgba(0,0,0,.52);
-  z-index: 20;
-}
-
-.nav-btn {
-  width: 58px;
-  height: 44px;
-  border: 1px solid rgba(75,231,255,.7);
-  background: rgba(75,231,255,.06);
-  color: var(--cyan);
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 25px;
-  line-height: 1;
-  font-weight: 1000;
-}
-
-.nav-btn:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
-
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.22);
-}
-
-.dot.active {
-  width: 30px;
-  background: var(--blue);
-  box-shadow: 0 0 16px rgba(20,157,255,.5);
-}
-
-@media (max-width: 920px) {
-  .selection-grid {
-    grid-template-columns: 1fr;
-    max-width: 520px;
-  }
-
-  .selection-image { height: 290px; }
-
-  .included-grid, .payment-row { grid-template-columns: 1fr; }
-
-  .review-row, .checkout-box, .new-lightbox-box, .saved-item {
-    grid-template-columns: 1fr;
-  }
-
-  .checkout-actions { min-width: 0; }
-
-  .edit-btn, .add-another { width: max-content; }
-
-  .saved-actions { justify-content: flex-start; }
-}
-
-@media (max-width: 650px) {
-  .topbar, .builder { width: min(100% - 24px, 1120px); }
-
-  .topbar {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .step-pill { justify-self: center; }
-
-  .logo { height: 82px; }
-
-  .selection-image { height: 245px; }
-
-  .size-option { grid-template-columns: auto 1fr; }
-
-  .size-price { grid-column: 2; }
-
-  .addon { grid-template-columns: 26px 1fr; }
-
-  .addon-price { grid-column: 2; }
-
-  .bottom-nav { border-radius: 24px; }
-}
-
-/* v6 patch: size list, shop pay button, included list, clickable saved designs */
-.size-list {
-  width: min(720px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 12px;
-}
-
-.size-option {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-  padding: 18px 20px;
-  box-shadow: 0 18px 54px rgba(0,0,0,.34);
-  transition: .16s ease;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  text-align: left;
-  width: 100%;
-}
-
-.size-option:hover,
-.size-option.selected {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(20,157,255,.10), 0 20px 64px rgba(0,0,0,.42);
-}
-
-.size-radio {
-  width: 22px;
-  height: 22px;
-  border: 2px solid rgba(255,255,255,.32);
-  border-radius: 999px;
-}
-
-.size-option.selected .size-radio {
-  border-color: var(--cyan);
-  box-shadow:
-    inset 0 0 0 4px #07111c,
-    inset 0 0 0 12px var(--cyan),
-    0 0 18px rgba(75,231,255,.42);
-}
-
-.size-info strong {
-  display: block;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: -.035em;
-}
-
-.size-info span {
-  display: block;
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.size-price {
-  color: var(--cyan);
-  font-size: 31px;
-  line-height: 1;
-  font-weight: 1000;
-  letter-spacing: -.045em;
-}
-
-.shop-pay-main {
-  border: none;
-  background: #5433eb;
-  color: #ffffff;
-  border-radius: 999px;
-  padding: 16px 18px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 900;
-  font-size: 17px;
-}
-
-.shop-pay-main span {
-  font-weight: 1000;
-  font-size: 22px;
-  letter-spacing: -.05em;
-}
-
-.checkout-note {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-  text-align: center;
-}
-
-.included-list {
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 9px;
-  list-style: none;
-}
-
-.included-list li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.045);
-  border-radius: 12px;
-  padding: 11px 12px;
-  color: #dbe9f7;
-}
-
-.included-list li::before {
-  content: "✓";
-  color: var(--cyan);
-  font-weight: 1000;
-}
-
-.saved-item {
-  cursor: pointer;
-}
-
-.saved-item:hover {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(20,157,255,.08);
-}
-
-@media (max-width: 650px) {
-  .size-option {
-    grid-template-columns: auto 1fr;
-  }
-  .size-price {
-    grid-column: 2;
-  }
-}
-
-
-/* v8 robust fixes */
-.selection-card,
-.size-option,
-.addon {
-  position: relative;
-}
-
-.selection-card.selected,
-.size-option.selected,
-.addon.selected {
-  border-color: var(--cyan) !important;
-  box-shadow: 0 0 0 4px rgba(20,157,255,.13), 0 0 56px rgba(20,157,255,.25), var(--shadow) !important;
-}
-
-.selection-card.selected::before,
-.size-option.selected::before,
-.addon.selected::before {
-  content: "Selected";
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 4;
-  color: #00111c;
-  background: var(--cyan);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-
-.size-list {
-  width: min(720px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 12px;
-}
-
-.size-option {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-  padding: 18px 20px;
-  box-shadow: 0 18px 54px rgba(0,0,0,.34);
-  transition: .16s ease;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  text-align: left;
-  width: 100%;
-}
-
-.size-radio {
-  width: 22px;
-  height: 22px;
-  border: 2px solid rgba(255,255,255,.32);
-  border-radius: 999px;
-}
-
-.size-option.selected .size-radio {
-  border-color: var(--cyan);
-  box-shadow: inset 0 0 0 4px #07111c, inset 0 0 0 12px var(--cyan), 0 0 18px rgba(75,231,255,.42);
-}
-
-.size-info strong {
-  display: block;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: -.035em;
-}
-
-.size-info span {
-  display: block;
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.size-price {
-  color: var(--cyan);
-  font-size: 31px;
-  line-height: 1;
-  font-weight: 1000;
-  letter-spacing: -.045em;
-}
-
-.shop-pay-main {
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  width: 100%;
-}
-
-.shop-pay-main img {
-  width: 100%;
-  max-width: 580px;
-  display: block;
-  border-radius: 999px;
-}
-
-.checkout-note {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-  text-align: center;
-}
-
-.included-list {
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 9px;
-  list-style: none;
-}
-
-.included-list li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.045);
-  border-radius: 12px;
-  padding: 11px 12px;
-  color: #dbe9f7;
-}
-
-.included-list li::before {
-  content: "✓";
-  color: var(--cyan);
-  font-weight: 1000;
-}
-
-.saved-item {
-  cursor: pointer;
-}
-
-.saved-item:hover {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(20,157,255,.08);
-}
-
-@media (max-width: 650px) {
-  .size-option {
-    grid-template-columns: auto 1fr;
-  }
-  .size-price {
-    grid-column: 2;
-  }
-}
-
-
-/* v10 quantity + saved title improvements */
-.quantity-box {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  border: 1px solid rgba(255,255,255,.13);
-  background: rgba(255,255,255,.045);
-  border-radius: 18px;
-  padding: 16px;
-}
-
-.quantity-box strong {
-  display: block;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  margin-bottom: 4px;
-}
-
-.quantity-box span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.qty-stepper {
-  display: inline-grid;
-  grid-template-columns: 44px 58px 44px;
-  align-items: center;
-  border: 1px solid rgba(75,231,255,.32);
-  background: rgba(75,231,255,.08);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.qty-stepper button {
-  border: none;
-  background: transparent;
-  color: #d7fbff;
-  height: 42px;
-  cursor: pointer;
-  font-size: 22px;
-  font-weight: 1000;
-}
-
-.qty-stepper button:hover {
-  background: rgba(75,231,255,.14);
-}
-
-.qty-value {
-  height: 42px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-weight: 1000;
-  border-left: 1px solid rgba(75,231,255,.22);
-  border-right: 1px solid rgba(75,231,255,.22);
-}
-
-.saved-title {
-  display: block;
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 1000;
-  text-transform: uppercase;
-  letter-spacing: .02em;
-  margin-bottom: 4px;
-}
-
-.saved-meta {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.saved-item {
-  grid-template-columns: 1fr auto auto auto;
-}
-
-.saved-qty {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.saved-qty .qty-stepper {
-  grid-template-columns: 36px 48px 36px;
-}
-
-.saved-qty .qty-stepper button,
-.saved-qty .qty-value {
-  height: 36px;
-}
-
-.current-lightbox-summary {
-  display: grid;
-  grid-template-columns: 155px 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 15px 16px;
-  border-top: 1px solid rgba(255,255,255,.08);
-}
-
-@media (max-width: 920px) {
-  .quantity-box,
-  .saved-item,
-  .current-lightbox-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .saved-qty {
-    justify-content: flex-start;
-  }
-}
-
-
-/* v11 logo + mobile design-card improvements */
-.logo {
-  height: 125px !important;
-}
-
-@media (max-width: 650px) {
-  .logo {
-    height: 96px !important;
-  }
-
-  .builder {
-    padding-top: 8px;
-  }
-
-  .selection-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-    max-width: 100% !important;
-  }
-
-  .selection-card {
-    min-width: 0;
-    border-radius: 8px;
-  }
-
-  .selection-image {
-    height: 132px !important;
-  }
-
-  .selection-content {
-    padding: 12px 10px 13px !important;
-  }
-
-  .selection-title {
-    font-size: 18px !important;
-    line-height: .95 !important;
-    margin-bottom: 5px !important;
-  }
-
-  .selection-sub {
-    font-size: 9px !important;
-    line-height: 1.2 !important;
-    letter-spacing: .04em !important;
-  }
-
-  .selection-card.selected::before {
-    top: 7px;
-    right: 7px;
-    font-size: 9px;
-    padding: 5px 7px;
-  }
-
-  .question {
-    margin-bottom: 18px;
-  }
-
-  h1 {
-    font-size: clamp(30px, 9vw, 42px);
-  }
-}
-
-
-/* v12 compact quantity controls */
-.qty-stepper {
-  width: 148px !important;
-  max-width: 148px !important;
-  min-width: 148px !important;
-  grid-template-columns: 42px 64px 42px !important;
-  justify-self: end;
-}
-
-.saved-qty .qty-stepper {
-  width: 126px !important;
-  max-width: 126px !important;
-  min-width: 126px !important;
-  grid-template-columns: 38px 50px 38px !important;
-}
-
-.quantity-box {
-  grid-template-columns: 1fr auto !important;
-}
-
-@media (max-width: 920px) {
-  .quantity-box {
-    grid-template-columns: 1fr auto !important;
-  }
-
-  .qty-stepper {
-    width: 132px !important;
-    max-width: 132px !important;
-    min-width: 132px !important;
-    grid-template-columns: 38px 56px 38px !important;
-    justify-self: end;
-  }
-
-  .saved-item {
-    grid-template-columns: 1fr !important;
-  }
-
-  .saved-qty {
-    justify-content: flex-start;
-  }
-
-  .saved-qty .qty-stepper {
-    width: 126px !important;
-    max-width: 126px !important;
-    min-width: 126px !important;
-  }
-}
-
-@media (max-width: 650px) {
-  .quantity-box {
-    grid-template-columns: 1fr auto !important;
-    gap: 10px !important;
-    align-items: center;
-  }
-
-  .quantity-box strong {
-    font-size: 13px;
-  }
-
-  .quantity-box span {
-    font-size: 12px;
-  }
-
-  .qty-stepper {
-    width: 124px !important;
-    max-width: 124px !important;
-    min-width: 124px !important;
-    grid-template-columns: 36px 52px 36px !important;
-    justify-self: end;
-  }
-
-  .qty-stepper button,
-  .qty-value {
-    height: 36px !important;
-  }
-
-  .saved-qty .qty-stepper {
-    width: 118px !important;
-    max-width: 118px !important;
-    min-width: 118px !important;
-    grid-template-columns: 34px 50px 34px !important;
-  }
-
-  .saved-qty .qty-stepper button,
-  .saved-qty .qty-value {
-    height: 34px !important;
-  }
-}
-
-
-/* v16 matched checkout button sizing */
-.checkout-actions {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-.shop-pay-main,
-.checkout-main {
-  width: 100% !important;
-  height: 56px !important;
-  min-height: 56px !important;
-  max-height: 56px !important;
-  border-radius: 14px !important;
-  display: grid !important;
-  place-items: center !important;
-  overflow: hidden !important;
-}
-
-.shop-pay-main {
-  background: #5433eb !important;
-}
-
-.shop-pay-main img {
-  width: 100% !important;
-  height: 56px !important;
-  max-width: none !important;
-  object-fit: fill !important;
-  display: block !important;
-  border-radius: 14px !important;
-}
-
-.checkout-main {
-  padding: 0 18px !important;
-}
-
-@media (max-width: 650px) {
-  .shop-pay-main,
-  .checkout-main {
-    height: 52px !important;
-    min-height: 52px !important;
-    max-height: 52px !important;
-    border-radius: 13px !important;
-  }
-
-  .shop-pay-main img {
-    height: 52px !important;
-    border-radius: 13px !important;
-  }
-}
-
-
-/* v17 shop button no extra background, same width */
-.checkout-actions {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-.shop-pay-main,
-.checkout-main {
-  width: 100% !important;
-}
-
-.shop-pay-main {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  display: block !important;
-  overflow: visible !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-}
-
-.shop-pay-main img {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  border-radius: 0 !important;
-  object-fit: contain !important;
-}
-
-.checkout-main {
-  min-height: 56px !important;
-  height: 56px !important;
-  max-height: 56px !important;
-  border-radius: 14px !important;
-  display: grid !important;
-  place-items: center !important;
-}
-
-@media (max-width: 650px) {
-  .checkout-main {
-    min-height: 52px !important;
-    height: 52px !important;
-    max-height: 52px !important;
-    border-radius: 13px !important;
-  }
-}
-
-
-/* Shopify integration upload status */
-.upload-status {
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.upload-status.success {
-  color: var(--cyan);
-}
-
-.upload-status.error {
-  color: #ff9bb0;
-}
-
-</style>
-</head>
-
-<body>
-<div class="page">
-  <header class="topbar">
-    <div></div>
-    <img class="logo" src="assets/logo.png" alt="4LifeTags logo">
-    <div class="step-pill" id="stepPill">Step 1 of 5</div>
-  </header>
-
-  <main class="builder">
-    <section class="step active" data-step="1">
-      <div class="editing-banner" id="editingBanner">Editing saved lightbox</div>
-
-      <div class="question">
-        <div class="kicker">1. Choose a design type</div>
-        <h1>Choose a selection option.</h1>
-      </div>
-
-      <div class="selection-grid">
-        <button type="button" class="selection-card" id="chooseTeamCard" data-selection="Choose a Team" onclick="selectDesignType('Choose a Team')">
-          <div class="selection-image" style="background-image:url('assets/team.png')"></div>
-          <div class="selection-content">
-            <h2 class="selection-title">Choose a Team</h2>
-            <p class="selection-sub">School • Team • Logo</p>
-          </div>
-        </button>
-
-        <button type="button" class="selection-card" id="uploadLogoCard" data-selection="Upload a Logo" onclick="selectDesignType('Upload a Logo')">
-          <div class="selection-image" style="background-image:url('assets/upload.png')"></div>
-          <div class="selection-content">
-            <h2 class="selection-title">Upload a Logo</h2>
-            <p class="selection-sub">Any image • Any design</p>
-          </div>
-        </button>
-      </div>
-
-      <div class="input-panel" id="teamPanel">
-        <label class="label" for="teamInput">What team, school, business, or logo do you want?</label>
-        <input class="text-input" id="teamInput" placeholder="Example: Gamecocks, Tesla, Braves, Dad's Garage...">
-      </div>
-
-      <div class="input-panel" id="uploadPanel">
-        <label class="label">Upload your logo file</label>
-        <div class="upload-row">
-          <span id="fileName">PNG, JPG, WEBP, or SVG works best.</span>
-          <label class="upload-btn" for="logoUpload">Choose File</label>
-          <input id="logoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
-        </div>
-        <div class="upload-status" id="uploadStatus"></div>
-      </div>
-    </section>
-
-    <section class="step" data-step="2">
-      <div class="question">
-        <div class="kicker">2. Lightbox size</div>
-        <h1>Choose a size.</h1>
-      </div>
-
-      <div class="size-list">
-        <button type="button" class="size-option" onclick="selectSize('Tiny (5in)', 25)">
-          <div class="size-radio"></div>
-          <div class="size-info"><strong>Tiny (5in)</strong><span>Compact gift size</span></div>
-          <div class="size-price">$25</div>
-        </button>
-
-        <button type="button" class="size-option selected" onclick="selectSize('Small (7in)', 30)">
-          <div class="size-radio"></div>
-          <div class="size-info"><strong>Small (7in)</strong><span>Most affordable upgrade</span></div>
-          <div class="size-price">$30</div>
-        </button>
-
-        <button type="button" class="size-option" onclick="selectSize('Medium (9in)', 35)">
-          <div class="size-radio"></div>
-          <div class="size-info"><strong>Medium (9in)</strong><span>Most popular</span></div>
-          <div class="size-price">$35</div>
-        </button>
-
-        <button type="button" class="size-option" onclick="selectSize('Large (11in)', 40)">
-          <div class="size-radio"></div>
-          <div class="size-info"><strong>Large (11in)</strong><span>Biggest display</span></div>
-          <div class="size-price">$40</div>
-        </button>
-      </div>
-    </section>
-
-    <section class="step" data-step="3">
-      <div class="question">
-        <div class="kicker">3. Special request</div>
-        <h1>Any special requests?</h1>
-        <p class="help">Tell us exactly how you want the final lightbox to look.</p>
-      </div>
-
-      <div class="input-panel active">
-        <label class="label" for="requestInput">Design notes</label>
-        <textarea class="textarea" id="requestInput" placeholder="Example: Make the logo white with a black outline. Keep it clean and not too busy. This is a gift for my dad."></textarea>
-      </div>
-    </section>
-
-    <section class="step" data-step="4">
-      <div class="question">
-        <div class="kicker">4. Add-ons</div>
-        <h1>Choose add-ons.</h1>
-      </div>
-
-      <div class="addon-list">
-        <div class="addon" data-addon="Gift Packaging" data-price="6" onclick="toggleAddon(this)">
-          <div class="check"></div>
-          <div><strong class="addon-title">Gift Packaging</strong><span class="addon-desc">Premium packaging for a cleaner gift presentation.</span></div>
-          <div class="addon-price">+$6</div>
-        </div>
-        <div class="addon" data-addon="Handwritten Note" data-price="4" onclick="toggleAddon(this)">
-          <div class="check"></div>
-          <div><strong class="addon-title">Perfect Gift Add-On</strong><span class="addon-desc">Add a handwritten note inside the package to make it feel more personal.</span></div>
-          <div class="addon-price">+$4</div>
-        </div>
-        <div class="input-panel" id="notePanel" style="margin-top:0;">
-          <label class="label" for="noteInput">Handwritten note</label>
-          <textarea class="textarea" id="noteInput" style="min-height:130px;" placeholder="Write the note here..."></textarea>
-        </div>
-        <div class="addon" data-addon="Rush Job" data-price="10" onclick="toggleAddon(this)">
-          <div class="check"></div>
-          <div><strong class="addon-title">Rush Job</strong><span class="addon-desc">Move the order forward in the production queue.</span></div>
-          <div class="addon-price">+$10</div>
-        </div>
-        <div class="addon" data-addon="Extra Remote" data-price="8" onclick="toggleAddon(this)">
-          <div class="check"></div>
-          <div><strong class="addon-title">Extra Remote</strong><span class="addon-desc">Additional LED remote for backup or another user.</span></div>
-          <div class="addon-price">+$8</div>
-        </div>
-        <div class="addon" data-addon="Design Proof Approval" data-price="3" onclick="toggleAddon(this)">
-          <div class="check"></div>
-          <div><strong class="addon-title">Design Proof Approval</strong><span class="addon-desc">Receive a quick design proof before production starts.</span></div>
-          <div class="addon-price">+$3</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="step" data-step="5">
-      <div class="question">
-        <div class="kicker">5. Review & checkout</div>
-        <h1>Ready to checkout.</h1>
-        <p class="help">Review your lightbox, edit any saved lightbox, or start another one.</p>
-      </div>
-
-      <div class="review-wrap">
-        <div class="checkout-box">
-          <div>
-            <div class="total-label">Order total before shipping/tax</div>
-            <div class="total" id="reviewTotal">$30.00</div>
-          </div>
-          <div class="checkout-actions">
-            <button type="button" class="shop-pay-main" id="shopPayBtn" onclick="startShopifyCheckout()">
-              <img src="assets/shop-button.png" alt="Buy with Shop">
-            </button>
-            <button type="button" class="checkout-main" id="checkoutBtn" onclick="startShopifyCheckout()">Checkout securely</button>
-            <div class="checkout-note">Secure payment is completed through Shopify checkout. Payment methods are processed by Shopify and are not stored in the 4LifeTags database.</div>
-          </div>
-        </div>
-
-        <div class="quantity-box">
-          <div>
-            <strong>Current lightbox quantity</strong>
-            <span>Use this if you want multiple copies of the current design.</span>
-          </div>
-          <div class="qty-stepper" aria-label="Current lightbox quantity">
-            <button type="button" onclick="changeCurrentQty(-1)">-</button>
-            <div class="qty-value" id="currentQtyValue">1</div>
-            <button type="button" onclick="changeCurrentQty(1)">+</button>
-          </div>
-        </div>
-
-        <div class="new-lightbox-box">
-          <div>
-            <strong>Want more than one lightbox?</strong>
-            <span>Save this design and start another one. You can click any saved lightbox below to edit it.</span>
-          </div>
-          <button type="button" class="add-another" id="addAnotherBtn" onclick="saveAndStartAnother()">Save & start another</button>
-        </div>
-
-        <div class="saved-section" id="savedSection">
-          <h2>Saved lightboxes</h2>
-          <div class="saved-list" id="savedList"></div>
-        </div>
-
-        <div class="included">
-          <h2>Here's what comes in every order.</h2>
-          <ul class="included-list">
-            <li>1x Lightbox Frame</li>
-            <li>1x Pre-Installed LED Lights</li>
-            <li>1x Wall Outlet Block</li>
-            <li>1x USB Extender</li>
-            <li>1x LED Lights Remote</li>
-          </ul>
-        </div>
-
-        <div class="review-card">
-          <div class="review-row">
-            <div class="review-label">Selection</div>
-            <div class="review-value" id="reviewSelection">Not selected</div>
-            <button type="button" class="edit-btn" onclick="goToStep(1)">Edit</button>
-          </div>
-          <div class="review-row">
-            <div class="review-label">Logo</div>
-            <div class="review-value" id="reviewLogo">Not entered</div>
-            <button type="button" class="edit-btn" onclick="goToStep(1)">Edit</button>
-          </div>
-          <div class="review-row">
-            <div class="review-label">Size</div>
-            <div class="review-value" id="reviewSize">Small (7in)</div>
-            <button type="button" class="edit-btn" onclick="goToStep(2)">Edit</button>
-          </div>
-          <div class="review-row">
-            <div class="review-label">Quantity</div>
-            <div class="review-value" id="reviewQty">1</div>
-            <button type="button" class="edit-btn" onclick="goToStep(5)">Edit</button>
-          </div>
-          <div class="review-row">
-            <div class="review-label">Request</div>
-            <div class="review-value" id="reviewRequest">None</div>
-            <button type="button" class="edit-btn" onclick="goToStep(3)">Edit</button>
-          </div>
-          <div class="review-row">
-            <div class="review-label">Add-ons</div>
-            <div class="review-value" id="reviewAddons">None</div>
-            <button type="button" class="edit-btn" onclick="goToStep(4)">Edit</button>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <nav class="bottom-nav">
-    <button type="button" class="nav-btn" id="backBtn" aria-label="Back" onclick="goToStep(state.step - 1)">←</button>
-    <div class="dots" id="dots"></div>
-    <button type="button" class="nav-btn" id="nextBtn" aria-label="Next" onclick="goToStep(state.step + 1)">→</button>
-  </nav>
-</div>
-
-<script>
-/*
-  Shopify checkout now runs through Netlify Functions:
-  - /.netlify/functions/upload-logo uploads the customer's file to Shopify Files.
-  - /.netlify/functions/create-checkout creates the Shopify cart and returns checkoutUrl.
-  Configure secrets in Netlify Environment Variables, not inside this public HTML file.
-*/
-
-const state = {
-  step: 1,
-  editingIndex: null,
-  selection: "",
-  teamText: "",
-  uploadFile: "",
-  uploadFileUrl: "",
-  uploadFileId: "",
-  size: "Small (7in)",
-  sizePrice: 30,
-  qty: 1,
-  request: "",
-  addons: [],
-  note: "",
-  saved: []
+const SHOPIFY_API_VERSION = "2026-04";
+
+const MAX_DESIGNS = Number(process.env.MAX_LIGHTBOXES_PER_ORDER || "10");
+const MAX_QTY_PER_DESIGN = Number(process.env.MAX_QTY_PER_LIGHTBOX || "25");
+const MAX_BODY_CHARS = Number(process.env.MAX_CHECKOUT_BODY_CHARS || "50000");
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX = Number(process.env.CHECKOUT_RATE_LIMIT_PER_MINUTE || "20");
+const rateBucket = new Map();
+
+const sizeVariantEnv = {
+  "Tiny (5in)": "SHOPIFY_VARIANT_TINY",
+  "Small (7in)": "SHOPIFY_VARIANT_SMALL",
+  "Medium (9in)": "SHOPIFY_VARIANT_MEDIUM",
+  "Large (11in)": "SHOPIFY_VARIANT_LARGE"
 };
 
-function byId(id) {
-  return document.getElementById(id);
+const addonVariantEnv = {
+  "Gift Packaging": "SHOPIFY_ADDON_GIFT_PACKAGING",
+  "Handwritten Note": "SHOPIFY_ADDON_HANDWRITTEN_NOTE",
+  "Rush Job": "SHOPIFY_ADDON_RUSH_JOB",
+  "Extra Remote": "SHOPIFY_ADDON_EXTRA_REMOTE",
+  "Design Proof Approval": "SHOPIFY_ADDON_DESIGN_PROOF"
+};
+
+function json(statusCode, body) {
+  return {
+    statusCode,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff"
+    },
+    body: JSON.stringify(body)
+  };
 }
 
-function hasCurrentDesign() {
-  return Boolean(state.selection || state.teamText || state.uploadFile || state.request || state.addons.length || state.note);
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Server is missing required configuration: ${name}`);
+  return value;
 }
 
-function unitTotal() {
-  return state.sizePrice + state.addons.reduce((sum, addon) => sum + addon.price, 0);
+function getIp(event) {
+  return (
+    event.headers["x-nf-client-connection-ip"] ||
+    event.headers["client-ip"] ||
+    event.headers["x-forwarded-for"] ||
+    "unknown"
+  ).split(",")[0].trim();
 }
 
-function currentTotal() {
-  return hasCurrentDesign() ? unitTotal() * state.qty : 0;
-}
+function rateLimit(event) {
+  const ip = getIp(event);
+  const now = Date.now();
+  const record = rateBucket.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
 
-function savedTotal() {
-  return state.saved.reduce((sum, item, index) => {
-    if (index === state.editingIndex) return sum;
-    return sum + item.total;
-  }, 0);
-}
-
-function totalAll() {
-  return currentTotal() + savedTotal();
-}
-
-function logoValue() {
-  if (state.selection === "Upload a Logo") {
-    return state.uploadFileUrl || state.uploadFileId || state.uploadFile || "No file uploaded yet";
-  }
-  return state.teamText || "Not entered";
-}
-
-function getLightboxTitle(design) {
-  if (!design) return "Custom Lightbox";
-
-  if (design.selection === "Choose a Team") {
-    const name = (design.teamText || design.logo || "").trim();
-    if (name && name !== "Not entered") return `${name} Lightbox`;
-    return "Team Lightbox";
-  }
-
-  if (design.selection === "Upload a Logo") {
-    const fileName = (design.uploadFile || "").trim();
-    if (fileName) return "Custom Upload Lightbox";
-    return "Custom Lightbox";
+  if (now > record.resetAt) {
+    record.count = 0;
+    record.resetAt = now + RATE_LIMIT_WINDOW_MS;
   }
 
-  return "Custom Lightbox";
+  record.count += 1;
+  rateBucket.set(ip, record);
+
+  if (record.count > RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  return true;
 }
 
+function allowedOrigins() {
+  return (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function checkOrigin(event) {
+  const allowed = allowedOrigins();
+
+  if (!allowed.length) {
+    throw new Error("Server is missing ALLOWED_ORIGINS.");
+  }
+
+  const origin = event.headers.origin || event.headers.Origin || "";
+  const referer = event.headers.referer || event.headers.Referer || "";
+
+  const valid = allowed.some((allowedOrigin) => {
+    return origin === allowedOrigin || referer.startsWith(allowedOrigin + "/");
+  });
+
+  if (!valid) {
+    return false;
+  }
+
+  return true;
+}
+
+function cleanString(value, maxLength = 500) {
+  return String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
 
 function displayAddonName(name) {
   if (name === "Handwritten Note") return "Perfect Gift Add-On";
   return name;
 }
 
-function syncInputsToState() {
-  const teamInput = byId("teamInput");
-  const requestInput = byId("requestInput");
-  const noteInput = byId("noteInput");
+function validateDesign(rawDesign) {
+  const size = cleanString(rawDesign.size, 50);
+  if (!sizeVariantEnv[size]) {
+    throw new Error("Invalid lightbox size.");
+  }
 
-  if (teamInput) state.teamText = teamInput.value.trim();
-  if (requestInput) state.request = requestInput.value.trim();
-  if (noteInput) state.note = noteInput.value.trim();
-}
+  const qty = Math.max(1, Math.min(MAX_QTY_PER_DESIGN, Number(rawDesign.qty || 1)));
 
-function cloneCurrentDesign() {
-  syncInputsToState();
+  const addons = Array.isArray(rawDesign.addons) ? rawDesign.addons : [];
+  const safeAddons = addons
+    .map((addon) => ({
+      name: cleanString(addon.name, 80),
+      price: Number(addon.price || 0)
+    }))
+    .filter((addon) => addonVariantEnv[addon.name]);
 
-  const design = {
-    selection: state.selection,
-    teamText: state.teamText,
-    uploadFile: state.uploadFile,
-    uploadFileUrl: state.uploadFileUrl,
-    uploadFileId: state.uploadFileId,
-    size: state.size,
-    sizePrice: state.sizePrice,
-    qty: state.qty,
-    request: state.request,
-    addons: state.addons.map(addon => ({ ...addon })),
-    note: state.note,
-    logo: logoValue()
+  const cleanedDesign = {
+    title: cleanString(rawDesign.title, 120) || "Custom Lightbox",
+    selection: cleanString(rawDesign.selection, 80),
+    teamText: cleanString(rawDesign.teamText, 120),
+    uploadFile: cleanString(rawDesign.uploadFile, 200),
+    uploadFileId: cleanString(rawDesign.uploadFileId, 250),
+    uploadFileUrl: cleanString(rawDesign.uploadFileUrl, 500),
+    logo: cleanString(rawDesign.logo, 500),
+    size,
+    sizePrice: Number(rawDesign.sizePrice || 0),
+    qty,
+    request: cleanString(rawDesign.request, 1000),
+    note: cleanString(rawDesign.note, 500),
+    addons: safeAddons
   };
 
-  design.title = getLightboxTitle(design);
-  design.unitTotal = unitTotal();
-  design.total = design.unitTotal * design.qty;
-
-  return design;
-}
-
-function applyCurrentToUI() {
-  const chooseTeamCard = byId("chooseTeamCard");
-  const uploadLogoCard = byId("uploadLogoCard");
-
-  document.querySelectorAll(".selection-card").forEach(card => card.classList.remove("selected"));
-  if (state.selection === "Choose a Team" && chooseTeamCard) chooseTeamCard.classList.add("selected");
-  if (state.selection === "Upload a Logo" && uploadLogoCard) uploadLogoCard.classList.add("selected");
-
-  byId("teamPanel").classList.toggle("active", state.selection === "Choose a Team");
-  byId("uploadPanel").classList.toggle("active", state.selection === "Upload a Logo");
-
-  byId("teamInput").value = state.teamText;
-  byId("fileName").textContent = state.uploadFile ? `Uploaded: ${state.uploadFile}` : "PNG, JPG, WEBP, or SVG works best.";
-  const uploadStatus = byId("uploadStatus");
-  if (uploadStatus) {
-    uploadStatus.className = "upload-status" + (state.uploadFileUrl || state.uploadFileId ? " success" : "");
-    uploadStatus.textContent = state.uploadFileUrl || state.uploadFileId ? "Logo uploaded. A direct image link will appear on the Shopify order." : "";
-  }
-  byId("requestInput").value = state.request;
-  byId("noteInput").value = state.note;
-
-  document.querySelectorAll(".size-option").forEach(option => {
-    const label = option.querySelector(".size-info strong").textContent.trim();
-    option.classList.toggle("selected", label === state.size);
-  });
-
-  document.querySelectorAll(".addon").forEach(addonEl => {
-    addonEl.classList.toggle("selected", state.addons.some(addon => addon.name === addonEl.dataset.addon));
-  });
-
-  byId("notePanel").classList.toggle("active", state.addons.some(addon => addon.name === "Handwritten Note"));
-
-  updateReview();
-}
-
-function renderDots() {
-  const dots = byId("dots");
-  dots.innerHTML = "";
-  for (let i = 1; i <= 5; i++) {
-    const dot = document.createElement("div");
-    dot.className = "dot" + (i === state.step ? " active" : "");
-    dots.appendChild(dot);
-  }
-}
-
-function goToStep(n) {
-  state.step = Math.max(1, Math.min(5, n));
-
-  document.querySelectorAll(".step").forEach(step => {
-    step.classList.toggle("active", Number(step.dataset.step) === state.step);
-  });
-
-  byId("stepPill").textContent = state.step === 5 ? "Checkout" : `Step ${state.step} of 5`;
-  byId("backBtn").disabled = state.step === 1;
-  byId("nextBtn").disabled = state.step === 5;
-
-  const banner = byId("editingBanner");
-  if (banner) {
-    banner.classList.toggle("active", state.editingIndex !== null);
-    banner.textContent = state.editingIndex !== null ? `Editing saved lightbox ${state.editingIndex + 1}` : "";
+  if (
+    cleanedDesign.selection === "Upload a Logo" &&
+    cleanedDesign.uploadFile &&
+    !cleanedDesign.uploadFileId &&
+    !cleanedDesign.uploadFileUrl
+  ) {
+    throw new Error("Logo upload is missing. Please re-upload the logo before checkout.");
   }
 
-  renderDots();
-  updateReview();
+  return cleanedDesign;
 }
 
-function selectDesignType(type) {
-  state.selection = type;
-  applyCurrentToUI();
-}
-
-function selectSize(size, price) {
-  state.size = size;
-  state.sizePrice = Number(price);
-  applyCurrentToUI();
-}
-
-function toggleAddon(element) {
-  const name = element.dataset.addon;
-  const price = Number(element.dataset.price);
-
-  if (state.addons.some(addon => addon.name === name)) {
-    state.addons = state.addons.filter(addon => addon.name !== name);
-  } else {
-    state.addons.push({ name, price });
-  }
-
-  applyCurrentToUI();
-}
-
-function changeCurrentQty(delta) {
-  state.qty = Math.max(1, state.qty + Number(delta));
-  updateReview();
-}
-
-function changeSavedQty(index, delta) {
-  const item = state.saved[index];
-  if (!item) return;
-
-  item.qty = Math.max(1, (item.qty || 1) + Number(delta));
-  item.unitTotal = item.unitTotal || (item.total / (item.qty || 1));
-  item.total = item.unitTotal * item.qty;
-
-  renderSaved();
-  updateReview();
-}
-
-function updateReview() {
-  syncInputsToState();
-
-  byId("reviewSelection").textContent = state.selection || "Not selected";
-  byId("reviewLogo").textContent = logoValue();
-  byId("reviewSize").textContent = state.size;
-
-  const reviewQty = byId("reviewQty");
-  if (reviewQty) reviewQty.textContent = String(state.qty);
-
-  const currentQtyValue = byId("currentQtyValue");
-  if (currentQtyValue) currentQtyValue.textContent = String(state.qty);
-
-  byId("reviewRequest").textContent = state.request || "None";
-
-  const addonText = state.addons.map(addon => displayAddonName(addon.name)).join(", ");
-  const noteText = state.note ? ` — Note: ${state.note}` : "";
-  byId("reviewAddons").textContent = (addonText || "None") + noteText;
-
-  byId("reviewTotal").textContent = `$${totalAll().toFixed(2)}`;
-}
-
-function renderSaved() {
-  const section = byId("savedSection");
-  const list = byId("savedList");
-
-  section.classList.toggle("active", state.saved.length > 0);
-
-  if (!state.saved.length) {
-    list.innerHTML = "";
-    return;
-  }
-
-  list.innerHTML = state.saved.map((item, index) => `
-    <div class="saved-item" onclick="loadSavedDesign(${index})" title="Click to edit this lightbox">
-      <div>
-        <span class="saved-title">${item.title || getLightboxTitle(item)}</span>
-        <span class="saved-meta">${item.size} • Qty ${item.qty || 1} • ${item.logo || "Not entered"}</span>
-      </div>
-
-      <div class="saved-qty" onclick="event.stopPropagation()">
-        <div class="qty-stepper" aria-label="Quantity for ${item.title || getLightboxTitle(item)}">
-          <button type="button" onclick="changeSavedQty(${index}, -1)">-</button>
-          <div class="qty-value">${item.qty || 1}</div>
-          <button type="button" onclick="changeSavedQty(${index}, 1)">+</button>
-        </div>
-      </div>
-
-      <strong>$${item.total.toFixed(2)}</strong>
-
-      <div class="saved-actions">
-        <button type="button" class="saved-edit" onclick="event.stopPropagation(); loadSavedDesign(${index})">Edit</button>
-        <button type="button" class="saved-remove" onclick="event.stopPropagation(); removeSavedDesign(${index})">Remove</button>
-      </div>
-    </div>
-  `).join("");
-}
-
-function resetCurrentDesign() {
-  state.editingIndex = null;
-  state.selection = "";
-  state.teamText = "";
-  state.uploadFile = "";
-  state.uploadFileUrl = "";
-  state.uploadFileId = "";
-  state.size = "Small (7in)";
-  state.sizePrice = 30;
-  state.qty = 1;
-  state.request = "";
-  state.addons = [];
-  state.note = "";
-  applyCurrentToUI();
-  goToStep(1);
-}
-
-function saveAndStartAnother() {
-  const design = cloneCurrentDesign();
-
-  if (!hasCurrentDesign()) {
-    alert("Choose a team or upload a logo before saving another lightbox.");
-    return;
-  }
-
-  if (state.editingIndex !== null) {
-    state.saved[state.editingIndex] = design;
-  } else {
-    state.saved.push(design);
-  }
-
-  renderSaved();
-  resetCurrentDesign();
-}
-
-function loadSavedDesign(index) {
-  const item = state.saved[index];
-  if (!item) return;
-
-  state.editingIndex = index;
-  state.selection = item.selection;
-  state.teamText = item.teamText;
-  state.uploadFile = item.uploadFile;
-  state.uploadFileUrl = item.uploadFileUrl || "";
-  state.uploadFileId = item.uploadFileId || "";
-  state.size = item.size;
-  state.sizePrice = item.sizePrice;
-  state.qty = item.qty || 1;
-  state.request = item.request;
-  state.addons = item.addons.map(addon => ({ ...addon }));
-  state.note = item.note;
-
-  applyCurrentToUI();
-  goToStep(1);
-}
-
-function removeSavedDesign(index) {
-  state.saved.splice(index, 1);
-  if (state.editingIndex === index) state.editingIndex = null;
-  renderSaved();
-  updateReview();
-}
-
-function getAllDesignsForCheckout() {
-  const designs = [...state.saved];
-
-  if (hasCurrentDesign()) {
-    const current = cloneCurrentDesign();
-
-    if (state.editingIndex !== null) {
-      designs[state.editingIndex] = current;
-    } else {
-      designs.push(current);
-    }
-  }
-
-  return designs.filter(item => item && item.selection);
-}
-
-function buildShopifyAttributes(design, index) {
+function buildLightboxAttributes(design, index) {
   return [
     { key: "Lightbox Number", value: String(index + 1) },
-    { key: "Lightbox Title", value: design.title || getLightboxTitle(design) },
+    { key: "Lightbox Title", value: design.title || "Custom Lightbox" },
     { key: "Selection Option", value: design.selection || "Not selected" },
-    { key: "Logo Request / Uploaded File", value: design.logo || "Not entered" },
+    { key: "Logo Request / Uploaded File", value: design.logo || design.uploadFileUrl || design.uploadFileId || design.uploadFile || "Not entered" },
+    { key: "Uploaded Logo Image URL", value: design.uploadFileUrl || "None" },
+    { key: "Open Uploaded Logo", value: design.uploadFileUrl || "No uploaded logo" },
+    { key: "Shopify Upload File ID", value: design.uploadFileId || "None" },
+    { key: "Uploaded Logo Filename", value: design.uploadFile || "None" },
     { key: "Size", value: design.size },
-    { key: "Quantity", value: String(design.qty || 1) },
+    { key: "Quantity", value: String(design.qty) },
     { key: "Special Request", value: design.request || "None" },
-    { key: "Add-ons", value: design.addons.map(addon => addon.name).join(", ") || "None" },
+    { key: "Add-ons", value: design.addons.map((a) => displayAddonName(a.name)).join(", ") || "None" },
     { key: "Gift Note", value: design.note || "None" },
     { key: "Included", value: "1x Lightbox Frame, 1x Pre-Installed LED Lights, 1x Wall Outlet Block, 1x USB Extender, 1x LED Lights Remote" }
   ];
 }
 
-async function createShopifyCart(designs) {
-  const response = await fetch("/.netlify/functions/create-checkout", {
+function buildAddonAttributes(design, designIndex, addon) {
+  return [
+    { key: "For Lightbox", value: String(designIndex + 1) },
+    { key: "Lightbox Title", value: design.title || "Custom Lightbox" },
+    { key: "Add-on", value: displayAddonName(addon.name) }
+  ];
+}
+
+async function shopifyStorefront(query, variables) {
+  const storeDomain = requireEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "");
+  const token = requireEnv("SHOPIFY_STOREFRONT_ACCESS_TOKEN");
+
+  const tokenType = String(process.env.SHOPIFY_STOREFRONT_TOKEN_TYPE || "private").toLowerCase();
+
+  const headers = {
+    "Content-Type": "application/json"
+  };
+
+  if (tokenType === "public") {
+    headers["X-Shopify-Storefront-Access-Token"] = token;
+  } else {
+    headers["Shopify-Storefront-Private-Token"] = token;
+  }
+
+  const response = await fetch(`https://${storeDomain}/api/${SHOPIFY_API_VERSION}/graphql.json`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      designs,
-      displayedTotal: `$${totalAll().toFixed(2)}`
-    })
+    headers,
+    body: JSON.stringify({ query, variables })
   });
 
   const data = await response.json();
 
-  if (!response.ok || !data.checkoutUrl) {
-    console.error(data);
-    throw new Error(data.error || "Could not create Shopify checkout.");
-  }
-
-  return data.checkoutUrl;
-}
-
-async function startShopifyCheckout() {
-  updateReview();
-
-  const designs = getAllDesignsForCheckout();
-
-  if (!designs.length) {
-    alert("Please choose a team or upload a logo before checkout.");
-    return;
-  }
-
-  const missingUpload = designs.find(design =>
-    design.selection === "Upload a Logo" &&
-    design.uploadFile &&
-    !design.uploadFileUrl &&
-    !design.uploadFileId
-  );
-
-  if (missingUpload) {
-    alert("Your logo file has not finished uploading yet. Please wait for the upload success message, or reselect the file and try again.");
-    return;
-  }
-
-  try {
-    const checkoutUrl = await createShopifyCart(designs);
-    window.location.href = checkoutUrl;
-  } catch (error) {
-    alert(error.message);
-  }
-}
-
-
-async function uploadLogoToShopify(file) {
-  const status = byId("uploadStatus");
-  const formData = new FormData();
-  formData.append("logo", file);
-
-  if (status) {
-    status.className = "upload-status";
-    status.textContent = "Uploading logo to Shopify...";
-  }
-
-  const response = await fetch("/.netlify/functions/upload-logo", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    if (status) {
-      status.className = "upload-status error";
-      status.textContent = data.error || "Upload failed.";
-    }
-    throw new Error(data.error || "Upload failed.");
-  }
-
-  state.uploadFileUrl = data.url || "";
-  state.uploadFileId = data.fileId || "";
-
-  if (status) {
-    status.className = "upload-status success";
-    status.textContent = "Logo uploaded. A direct image link will appear on the Shopify order.";
+  if (!response.ok || data.errors) {
+    console.error("Shopify Storefront error:", JSON.stringify(data, null, 2));
+    throw new Error("Shopify checkout could not be created.");
   }
 
   return data;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  byId("teamInput").addEventListener("input", updateReview);
-  byId("requestInput").addEventListener("input", updateReview);
-  byId("noteInput").addEventListener("input", updateReview);
-
-  byId("logoUpload").addEventListener("change", async event => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    state.uploadFile = file.name;
-    state.uploadFileUrl = "";
-    state.uploadFileId = "";
-    applyCurrentToUI();
-
-    try {
-      await uploadLogoToShopify(file);
-    } catch (error) {
-      state.uploadFileUrl = "";
-      state.uploadFileId = "";
-      console.error(error);
-      alert(error.message || "Logo upload failed. Please try uploading the file again before checkout.");
+exports.handler = async (event) => {
+  try {
+    if (event.httpMethod !== "POST") {
+      return json(405, { error: "Method not allowed" });
     }
 
-    applyCurrentToUI();
-  });
+    if (!checkOrigin(event)) {
+      return json(403, { error: "Request blocked." });
+    }
 
-  applyCurrentToUI();
-  goToStep(1);
-});
-</script>
-</body>
-</html>
+    if (!rateLimit(event)) {
+      return json(429, { error: "Too many requests. Please wait a minute and try again." });
+    }
+
+    if (!String(event.headers["content-type"] || "").includes("application/json")) {
+      return json(415, { error: "Invalid request type." });
+    }
+
+    if ((event.body || "").length > MAX_BODY_CHARS) {
+      return json(413, { error: "Request is too large." });
+    }
+
+    const body = JSON.parse(event.body || "{}");
+    const rawDesigns = Array.isArray(body.designs) ? body.designs : [];
+
+    if (!rawDesigns.length) {
+      return json(400, { error: "No lightboxes were submitted." });
+    }
+
+    if (rawDesigns.length > MAX_DESIGNS) {
+      return json(400, { error: `Too many lightboxes. Maximum is ${MAX_DESIGNS}.` });
+    }
+
+    const designs = rawDesigns.map(validateDesign);
+    const lines = [];
+
+    designs.forEach((design, index) => {
+      const sizeVariantId = requireEnv(sizeVariantEnv[design.size]);
+
+      lines.push({
+        merchandiseId: sizeVariantId,
+        quantity: design.qty,
+        attributes: buildLightboxAttributes(design, index)
+      });
+
+      design.addons.forEach((addon) => {
+        const addonEnvName = addonVariantEnv[addon.name];
+        if (!addonEnvName) return;
+
+        lines.push({
+          merchandiseId: requireEnv(addonEnvName),
+          quantity: design.qty,
+          attributes: buildAddonAttributes(design, index, addon)
+        });
+      });
+    });
+
+    const mutation = `
+      mutation cartCreate($input: CartInput!) {
+        cartCreate(input: $input) {
+          cart {
+            id
+            checkoutUrl
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const data = await shopifyStorefront(mutation, {
+      input: {
+        lines,
+        attributes: [
+          { key: "Order Builder", value: "4LifeTags Custom Lightbox Builder" },
+          { key: "Builder Total Displayed", value: cleanString(body.displayedTotal, 50) }
+        ]
+      }
+    });
+
+    const payload = data.data.cartCreate;
+
+    if (payload.userErrors && payload.userErrors.length) {
+      console.error("Cart userErrors:", payload.userErrors);
+      return json(400, { error: "Shopify could not create the cart. Please review the order and try again." });
+    }
+
+    return json(200, { checkoutUrl: payload.cart.checkoutUrl, cartId: payload.cart.id });
+  } catch (error) {
+    console.error(error);
+    const rawMessage = String(error.message || "");
+    const safeMessage = rawMessage.startsWith("Server is missing") || rawMessage.includes("Logo upload is missing")
+      ? rawMessage
+      : "Checkout failed. Please try again.";
+    return json(500, { error: safeMessage });
+  }
+};

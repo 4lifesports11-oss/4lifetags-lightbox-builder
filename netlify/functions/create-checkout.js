@@ -126,7 +126,7 @@ function validateDesign(rawDesign) {
     }))
     .filter((addon) => addonVariantEnv[addon.name]);
 
-  return {
+  const cleanedDesign = {
     title: cleanString(rawDesign.title, 120) || "Custom Lightbox",
     selection: cleanString(rawDesign.selection, 80),
     teamText: cleanString(rawDesign.teamText, 120),
@@ -141,6 +141,17 @@ function validateDesign(rawDesign) {
     note: cleanString(rawDesign.note, 500),
     addons: safeAddons
   };
+
+  if (
+    cleanedDesign.selection === "Upload a Logo" &&
+    cleanedDesign.uploadFile &&
+    !cleanedDesign.uploadFileId &&
+    !cleanedDesign.uploadFileUrl
+  ) {
+    throw new Error("Logo upload is missing. Please re-upload the logo before checkout.");
+  }
+
+  return cleanedDesign;
 }
 
 function buildLightboxAttributes(design, index) {
@@ -294,8 +305,9 @@ exports.handler = async (event) => {
     return json(200, { checkoutUrl: payload.cart.checkoutUrl, cartId: payload.cart.id });
   } catch (error) {
     console.error(error);
-    const safeMessage = String(error.message || "").startsWith("Server is missing")
-      ? error.message
+    const rawMessage = String(error.message || "");
+    const safeMessage = rawMessage.startsWith("Server is missing") || rawMessage.includes("Logo upload is missing")
+      ? rawMessage
       : "Checkout failed. Please try again.";
     return json(500, { error: safeMessage });
   }

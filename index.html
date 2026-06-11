@@ -2107,6 +2107,18 @@ async function startShopifyCheckout() {
     return;
   }
 
+  const missingUpload = designs.find(design =>
+    design.selection === "Upload a Logo" &&
+    design.uploadFile &&
+    !design.uploadFileUrl &&
+    !design.uploadFileId
+  );
+
+  if (missingUpload) {
+    alert("Your logo file has not finished uploading yet. Please wait for the upload success message, or reselect the file and try again.");
+    return;
+  }
+
   try {
     const checkoutUrl = await createShopifyCart(designs);
     window.location.href = checkoutUrl;
@@ -2169,7 +2181,10 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await uploadLogoToShopify(file);
     } catch (error) {
+      state.uploadFileUrl = "";
+      state.uploadFileId = "";
       console.error(error);
+      alert(error.message || "Logo upload failed. Please try uploading the file again before checkout.");
     }
 
     applyCurrentToUI();

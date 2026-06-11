@@ -11,6 +11,7 @@ Important security rules
 Netlify environment variables required
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
 SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_storefront_token
+SHOPIFY_STOREFRONT_TOKEN_TYPE=private
 # New Shopify Dev Dashboard app flow. Use these two instead of SHOPIFY_ADMIN_ACCESS_TOKEN:
 SHOPIFY_CLIENT_ID=your_dev_dashboard_client_id
 SHOPIFY_CLIENT_SECRET=your_dev_dashboard_client_secret

@@ -172,12 +172,21 @@ async function shopifyStorefront(query, variables) {
   const storeDomain = requireEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "");
   const token = requireEnv("SHOPIFY_STOREFRONT_ACCESS_TOKEN");
 
+  const tokenType = String(process.env.SHOPIFY_STOREFRONT_TOKEN_TYPE || "private").toLowerCase();
+
+  const headers = {
+    "Content-Type": "application/json"
+  };
+
+  if (tokenType === "public") {
+    headers["X-Shopify-Storefront-Access-Token"] = token;
+  } else {
+    headers["Shopify-Storefront-Private-Token"] = token;
+  }
+
   const response = await fetch(`https://${storeDomain}/api/${SHOPIFY_API_VERSION}/graphql.json`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Storefront-Access-Token": token
-    },
+    headers,
     body: JSON.stringify({ query, variables })
   });
 
